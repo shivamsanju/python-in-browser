@@ -31,18 +31,30 @@
               margin-right: 6vw;
             "
           >
-            <input
-              type="button"
-              id="run"
-              value="Run"
-              onclick="runCode();"
-              style="
-                margin: 17px;
-                padding: 10px;
-                background-color: rgb(53, 234, 53);
-                cursor: pointer;
-              "
-            />
+            <div style="display: flex; justify-content: space-between">
+              <h1
+                style="
+                  font-family: Monospace;
+                  font-size: 2em;
+                  font-weight: bold;
+                  margin-right: 80px;
+                "
+              >
+                Editor
+              </h1>
+              <input
+                type="button"
+                id="run"
+                value="Run"
+                onclick="runCode();"
+                style="
+                  margin: 17px;
+                  padding: 10px;
+                  background-color: rgb(53, 234, 53);
+                  cursor: pointer;
+                "
+              />
+            </div>
             <textarea
               type="text"
               id="codeBlock"
@@ -139,7 +151,7 @@
 
         //clear terminal
         function clearTerminal() {
-          terminal.value = '>>> terminal cleared';
+          terminal.value = '>>> terminal cleared!';
         }
 
         // handle tab
