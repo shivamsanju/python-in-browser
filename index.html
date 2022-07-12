@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Python In Browser</title>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.20.0/full/pyodide.js"></script>
+
+    <body style="background-color: #f5f3f3">
+      <div style="display: flex; flex-direction: column; align-items: center">
+        <header>
+          <h1
+            style="
+              font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS',
+                sans-serif;
+              font-size: 3em;
+              font-weight: bold;
+              background-color: #ccc;
+              padding: 5px 20px;
+              border-radius: 30px;
+            "
+          >
+            Run Python In Browser
+          </h1>
+        </header>
+        <div style="display: flex; flex-direction: row">
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              margin-right: 6vw;
+            "
+          >
+            <input
+              type="button"
+              id="run"
+              value="Run"
+              onclick="runCode();"
+              style="
+                margin: 17px;
+                padding: 10px;
+                background-color: rgb(53, 234, 53);
+                cursor: pointer;
+              "
+            />
+            <textarea
+              type="text"
+              id="codeBlock"
+              placeholder="enter code.."
+              style="
+                font-family: Monospace;
+                padding: 5px;
+                height: 70vh;
+                width: 40vw;
+                border: 1px solid black;
+                resize: none;
+                background-color: #fafafa;
+              "
+            ></textarea>
+          </div>
+          <div
+            style="display: flex; flex-direction: column; align-items: center"
+          >
+            <div style="display: flex; justify-content: space-between">
+              <h1
+                style="
+                  font-family: Monospace;
+                  font-size: 2em;
+                  font-weight: bold;
+                  margin-right: 80px;
+                "
+              >
+                Terminal
+              </h1>
+              <input
+                type="button"
+                id="run"
+                value="Clear Terminal"
+                onclick="clearTerminal();"
+                style="
+                  margin: 17px;
+                  padding: 10px;
+                  background-color: rgb(53, 204, 234);
+                  cursor: pointer;
+                "
+              />
+            </div>
+
+            <textarea
+              style="
+                font-family: Monospace;
+                padding: 5px;
+                height: 70vh;
+                width: 40vw;
+                background-color: #0f0f0f;
+                color: #ccc;
+                resize: none;
+              "
+              id="terminal"
+              style="width: 80%"
+              disabled
+            ></textarea>
+          </div>
+        </div>
+      </div>
+      <script>
+        const terminal = document.getElementById('terminal');
+        let code = document.getElementById('codeBlock');
+
+        // console to terminal
+        let baseLogFunction = console.log;
+        console.log = function () {
+          baseLogFunction.apply(console, arguments);
+          let args = Array.prototype.slice.call(arguments);
+          for (let i = 0; i < args.length; i++) {
+            terminal.value += '>>> ' + args[i] + '\n';
+            terminal.scrollTop = terminal.scrollHeight;
+          }
+        };
+
+        // init Pyodide
+        async function main() {
+          let pyodide = await loadPyodide();
+          console.log('Ready to run code');
+          return pyodide;
+        }
+
+        let pyodideReadyPromise = main();
+
+        // run code
+        async function runCode() {
+          let pyodide = await pyodideReadyPromise;
+          try {
+            pyodide.runPython(code.value);
+          } catch (e) {
+            console.log(e);
+          }
+        }
+
+        //clear terminal
+        function clearTerminal() {
+          terminal.value = '>>> terminal cleared';
+        }
+
+        // handle tab
+        document
+          .getElementById('codeBlock')
+          .addEventListener('keydown', function (e) {
+            if (e.key == 'Tab') {
+              e.preventDefault();
+              let start = this.selectionStart;
+              let end = this.selectionEnd;
+
+              // set textarea value to: text before caret + tab + text after caret
+              this.value =
+                this.value.substring(0, start) +
+                '\t' +
+                this.value.substring(end);
+
+              // put caret at right position again
+              this.selectionStart = this.selectionEnd = start + 1;
+            }
+          });
+      </script>
+    </body>
+  </head>
+</html>
