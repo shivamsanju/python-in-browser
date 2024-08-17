@@ -1,179 +1,371 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Python In Browser</title>
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.20.0/full/pyodide.js"></script>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+    <link rel="stylesheet" data-name="vs/editor/editor.main"
+        href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.33.0/min/vs/editor/editor.main.min.css" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f9fc;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            color: #333;
+            overflow: hidden;
+        }
 
-    <body style="background-color: #f5f3f3">
-      <div style="display: flex; flex-direction: column; align-items: center">
-        <header>
-          <h1
-            style="
-              font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS',
-                sans-serif;
-              font-size: 3em;
-              font-weight: bold;
-              background-color: #ccc;
-              padding: 5px 20px;
-              border-radius: 30px;
-            "
-          >
-            Run Python In Browser
-          </h1>
-        </header>
-        <div style="display: flex; flex-direction: row">
-          <div
-            style="
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              margin-right: 6vw;
-            "
-          >
-            <div style="display: flex; justify-content: space-between">
-              <h1
-                style="
-                  font-family: Monospace;
-                  font-size: 2em;
-                  font-weight: bold;
-                  margin-right: 80px;
-                "
-              >
-                Editor
-              </h1>
-              <input
-                type="button"
-                id="run"
-                value="Run"
-                onclick="runCode();"
-                style="
-                  margin: 17px;
-                  padding: 10px;
-                  background-color: rgb(53, 234, 53);
-                  cursor: pointer;
-                "
-              />
-            </div>
-            <textarea
-              type="text"
-              id="codeBlock"
-              placeholder="enter code.."
-              style="
-                font-family: Monospace;
-                padding: 5px;
-                height: 70vh;
-                width: 40vw;
-                border: 1px solid black;
-                resize: none;
-                background-color: #fafafa;
-              "
-            ></textarea>
-          </div>
-          <div
-            style="display: flex; flex-direction: column; align-items: center"
-          >
-            <div style="display: flex; justify-content: space-between">
-              <h1
-                style="
-                  font-family: Monospace;
-                  font-size: 2em;
-                  font-weight: bold;
-                  margin-right: 80px;
-                "
-              >
-                Terminal
-              </h1>
-              <input
-                type="button"
-                id="run"
-                value="Clear Terminal"
-                onclick="clearTerminal();"
-                style="
-                  margin: 17px;
-                  padding: 10px;
-                  background-color: rgb(53, 204, 234);
-                  cursor: pointer;
-                "
-              />
-            </div>
+        #sidebar {
+            width: 250px;
+            background-color: #1e1e1e;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            box-sizing: border-box;
+            border-right: 2px solid #007bff;
+        }
 
-            <textarea
-              style="
-                font-family: Monospace;
-                padding: 5px;
-                height: 70vh;
-                width: 40vw;
-                background-color: #0f0f0f;
-                color: #ccc;
-                resize: none;
-              "
-              id="terminal"
-              style="width: 80%"
-              disabled
-            ></textarea>
-          </div>
+        #sidebar h2 {
+            font-size: 16px;
+            margin-top: 0;
+        }
+
+        #packageList {
+            margin-top: 10px;
+            flex: 1;
+            overflow-y: auto;
+            background-color: #2e2e2e;
+            border-radius: 4px;
+            padding: 5px;
+        }
+
+        .package-item {
+            background-color: #3c3c3c;
+            padding: 5px;
+            border-radius: 4px;
+            margin-bottom: 5px;
+        }
+
+        #sidebar button {
+            margin-top: 10px;
+            padding: 5px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-size: 12px;
+        }
+
+        #sidebar button:hover {
+            background-color: #218838;
+        }
+
+        #topRibbon {
+            background-color: #007bff;
+            height: 30px;
+            width: calc(100% - 250px);
+            position: fixed;
+            top: 0;
+            left: 250px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+        #topRibbon h1 {
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .button {
+            padding: 5px 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-left: 5px;
+            font-size: 10px;
+        }
+
+        .button:hover {
+            background-color: #218838;
+        }
+
+        .clear-button {
+            background-color: #dc3545;
+        }
+
+        .clear-button:hover {
+            background-color: #c82333;
+        }
+
+        .toggle-terminal-button {
+            background-color: #2e2e2e;
+        }
+
+        .toggle-terminal-button:hover {
+            background-color: #393939;
+        }
+
+        #editorContainer {
+            position: absolute;
+            top: 30px;
+            bottom: 0;
+            left: 250px;
+            right: 0;
+            width: calc(100% - 250px);
+            height: calc(100vh - 30px);
+        }
+
+        #terminalContainer {
+            position: fixed;
+            bottom: 0;
+            left: 250px;
+            width: calc(100% - 250px);
+            height: 200px;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Courier New', Courier, monospace;
+            border-top: 5px solid #007bff;
+            display: none;
+            resize: vertical;
+            overflow: auto;
+        }
+
+        #terminalContainer.resizing {
+            cursor: n-resize;
+        }
+
+        #packageInput,
+        #searchInput {
+            width: calc(100% - 10px);
+            padding: 5px;
+            border: none;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .package-item {
+            font-size: 9px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #222;
+        }
+
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #333 #222;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="sidebar">
+        <h2>Installed Packages</h2>
+        <input type="text" id="searchInput" placeholder="Search packages" oninput="filterPackages()" />
+        <div id="packageList">
+            <!-- List of installed packages will appear here -->
         </div>
-      </div>
-      <script>
-        const terminal = document.getElementById('terminal');
-        let code = document.getElementById('codeBlock');
+        <input type="text" id="packageInput" placeholder="Package name" />
+        <button onclick="loadPackage()">Load Package</button>
+    </div>
 
-        // console to terminal
+    <div id="topRibbon">
+        <h1 id="topRibbonHeading">Python in Browser</h1>
+        <div>
+            <button class="button" onclick="runCode()">Run</button>
+            <button class="button clear-button" onclick="clearTerminal()">Clear Terminal</button>
+            <button class="button toggle-terminal-button" onclick="toggleTerminal()">Toggle Terminal</button>
+        </div>
+    </div>
+
+    <div id="editorContainer"></div>
+    <div id="terminalContainer"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.33.0/min/vs/loader.min.js"
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+        let editor, terminal;
+        let terminalVisible = false;
+        let pyodide;
+        let allPackages = [];
+
+
+        require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.33.0/min/vs' } });
+        require(['vs/editor/editor.main'], function () {
+            editor = monaco.editor.create(document.getElementById('editorContainer'), {
+                value: '',
+                language: 'python',
+                theme: 'vs-dark',
+                automaticLayout: true,
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+            });
+
+            terminal = monaco.editor.create(document.getElementById('terminalContainer'), {
+                value: 'Terminal ready\n$ ',
+                language: 'plaintext',
+                theme: 'vs-dark',
+                automaticLayout: true,
+                readOnly: true,
+                lineNumbers: false,
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+            });
+        });
+
         let baseLogFunction = console.log;
+
         console.log = function () {
-          baseLogFunction.apply(console, arguments);
-          let args = Array.prototype.slice.call(arguments);
-          for (let i = 0; i < args.length; i++) {
-            terminal.value += '>>> ' + args[i] + '\n';
-            terminal.scrollTop = terminal.scrollHeight;
-          }
+            baseLogFunction.apply(console, arguments);
+            let args = Array.prototype.slice.call(arguments);
+            for (let i = 0; i < args.length; i++) {
+                const terminalValue = terminal.getValue();
+                if (typeof args[i] === 'string' && args[i].startsWith(`Packages list: `)) {
+                    try {
+                        const cleanedString = args[i].replace("Packages list:", "").trim();
+                        const jsonString = cleanedString.replace(/'/g, '"');
+                        let packages = JSON.parse(jsonString);
+                        setPythonVersion(packages.info.python)
+                        packages = Object.keys(packages.packages).sort()
+                        allPackages = packages;
+                        setPackages(packages);
+                    } catch (e) {
+                        console.error(e)
+                        terminal.setValue(terminalValue + 'Error parsing packages:', e + '\n$ ');
+                        terminal.revealLine(terminal.getModel().getLineCount());
+                    }
+                } else {
+                    terminal.setValue(terminalValue + args[i] + '\n$ ');
+                    terminal.revealLine(terminal.getModel().getLineCount());
+                }
+
+            }
         };
 
-        // init Pyodide
         async function main() {
-          let pyodide = await loadPyodide();
-          console.log('Ready to run code');
-          return pyodide;
+            pyodide = await loadPyodide();
+            await pyodide.loadPackage(["micropip"]);
+            updatePackageList();
+            toggleTerminal();
+            return pyodide;
         }
 
-        let pyodideReadyPromise = main();
+        pyodideReadyPromise = main();
 
-        // run code
+        function setPythonVersion(version) {
+            topRibbonHeading = document.getElementById('topRibbonHeading');
+            topRibbonHeading.innerHTML = `Python in Browser - (V ${version})`
+        }
+
         async function runCode() {
-          let pyodide = await pyodideReadyPromise;
-          try {
-            pyodide.runPython(code.value);
-          } catch (e) {
-            console.log(e);
-          }
-        }
-
-        //clear terminal
-        function clearTerminal() {
-          terminal.value = '>>> terminal cleared!';
-        }
-
-        // handle tab
-        document
-          .getElementById('codeBlock')
-          .addEventListener('keydown', function (e) {
-            if (e.key == 'Tab') {
-              e.preventDefault();
-              let start = this.selectionStart;
-              let end = this.selectionEnd;
-
-              // set textarea value to: text before caret + tab + text after caret
-              this.value =
-                this.value.substring(0, start) +
-                '\t' +
-                this.value.substring(end);
-
-              // put caret at right position again
-              this.selectionStart = this.selectionEnd = start + 1;
+            try {
+                let code = editor.getValue();
+                pyodide.runPython(code);
+            } catch (e) {
+                console.log(e);
             }
-          });
-      </script>
-    </body>
-  </head>
+        }
+
+        async function loadPackage() {
+            if (!terminalVisible) toggleTerminal();
+            let packageName = document.getElementById('packageInput').value;
+            if (!packageName) {
+                console.log('Please enter a package name');
+                return;
+            }
+            console.log(`Attempting to load package: ${packageName}`);
+            try {
+                await pyodide.runPython(`import micropip; micropip.install('${packageName}', keep_going=True)`);
+                console.log(`Package ${packageName} loaded successfully.`);
+                document.getElementById('packageInput').value = ""
+                updatePackageList();
+            } catch (e) {
+                console.log(`Error loading package ${packageName}: ${e}`);
+            }
+        }
+
+        async function updatePackageList() {
+            await pyodide.runPython('import micropip; print("Packages list: ", micropip.freeze())');
+        }
+
+        async function filterPackages() {
+            const searchValue = document.getElementById('searchInput').value.toLowerCase();
+            const filteredPackages = allPackages.filter(pkg => pkg.toLowerCase().includes(searchValue));
+            setPackages(filteredPackages);
+        }
+        async function setPackages(packages) {
+            let packageList = document.getElementById('packageList');
+            packageList.innerHTML = '';
+            packages.forEach(pkg => {
+                if (pkg) {
+                    let div = document.createElement('div');
+                    div.className = 'package-item';
+                    div.textContent = pkg;
+                    packageList.appendChild(div);
+                }
+            });
+        }
+
+        function clearTerminal() {
+            terminal.setValue('Terminal cleared\n$ ');
+        }
+
+        function toggleTerminal() {
+            terminalVisible = !terminalVisible;
+            const terminalContainer = document.getElementById('terminalContainer');
+            terminalContainer.style.display = terminalVisible ? 'block' : 'none';
+            if (terminalVisible) {
+                terminalContainer.addEventListener('mousedown', initResize, false);
+            } else {
+                terminalContainer.removeEventListener('mousedown', initResize, false);
+            }
+        }
+
+        function initResize(e) {
+            if (e.offsetY < 5) {
+                window.addEventListener('mousemove', doResize, false);
+                window.addEventListener('mouseup', stopResize, false);
+                terminalContainer.classList.add('resizing');
+            }
+        }
+
+        function doResize(e) {
+            terminalContainer.style.height = (window.innerHeight - e.clientY) + 'px';
+            // terminalContainer.style.cursor = 'n-resize';
+        }
+
+        function stopResize() {
+            window.removeEventListener('mousemove', doResize, false);
+            window.removeEventListener('mouseup', stopResize, false);
+            terminalContainer.classList.remove('resizing');
+        }
+    </script>
+</body>
+
 </html>
